@@ -1,37 +1,37 @@
 import { FC } from "react";
 import { SliderField, NotchLabel } from "decky-frontend-lib";
 import { capitalize } from "lodash";
-import useGpuMode from "../../hooks/useGpuMode";
+import useCpuEpp from "../../hooks/useCpuEpp";
 
-enum Mode {
-  LOW = 0,
-  AUTO = 1,
-  RANGE = 2,
-  FIXED = 3,
+enum Epp {
+  POWER = 0,
+  BALANCE_POWER = 1,
+  BALANCE_PERFORMANCE = 2,
+  PERFORMANCE = 3,
 }
 
-const GpuModeSlider: FC = () => {
-  const { gpuMode, setGpuMode } = useGpuMode();
+const CpuEppSlider: FC = () => {
+  const { cpuEpp, setCpuEpp } = useCpuEpp();
 
   const handleSliderChange = (value: number) => {
     // enum does reverse mapping, including value to key
-    return setGpuMode(Mode[value]);
+    return setCpuEpp(Epp[value]);
   };
 
-  const MODES: NotchLabel[] = Object.keys(Mode)
+  const MODES: NotchLabel[] = Object.keys(Epp)
     .filter((key) => isNaN(Number(key)))
     .map((mode, idx) => {
       return { notchIndex: idx, label: capitalize(mode), value: idx };
     });
 
   // known bug: typescript has incorrect type for reverse mapping from enums
-  const sliderValue = Mode[gpuMode] as any;
+  const sliderValue = Epp[cpuEpp] as any;
 
   return (
     <>
       <SliderField
-        label="GPU Frequency Mode"
-        value={sliderValue}
+        label="CPU Governor"
+        value={sliderValue || Epp.POWER}
         min={0}
         max={MODES.length - 1}
         step={1}
@@ -46,4 +46,4 @@ const GpuModeSlider: FC = () => {
   );
 };
 
-export default GpuModeSlider;
+export default CpuEppSlider;

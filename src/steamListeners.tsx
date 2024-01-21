@@ -18,7 +18,7 @@ export const currentGameInfoListener = () => {
       // new currentGameId, dispatch to the store
       store.dispatch(setCurrentGameInfo(results));
     }
-  }, 500);
+  }, 1000);
 
   return () => {
     if (currentGameInfoListenerIntervalId) {

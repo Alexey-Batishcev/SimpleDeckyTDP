@@ -2,10 +2,24 @@ import { ServerAPI } from "decky-frontend-lib";
 import { TdpProfiles } from "../redux-modules/settingsSlice";
 
 export enum GpuModes {
-  DEFAULT = "DEFAULT",
+  LOW = "LOW",
+  AUTO = "AUTO",
   RANGE = "RANGE",
   FIXED = "FIXED",
 }
+
+export enum CpuGovernors {
+  POWERSAVE = "POWERSAVE",
+  PERFORMANCE = "PERFORMANCE",
+}
+
+export enum CpuEpp {
+  POWER = "POWER",
+  BALANCE_POWER = "BALANCE_POWER",
+  BALANCE_PERFORMANCE = "BALANCE_PERFORMANCE",
+  PERFORMANCE = "PERFORMANCE",
+}
+
 
 export enum ServerAPIMethods {
   SET_SETTING = "set_setting",
@@ -14,6 +28,7 @@ export enum ServerAPIMethods {
   SET_TDP = "set_tdp",
   SAVE_TDP = "save_tdp",
   POLL_TDP = "poll_tdp",
+  SET_APP = "set_app",
 }
 
 export const createLogInfo = (serverAPI: ServerAPI) => async (info: any) => {
@@ -21,6 +36,13 @@ export const createLogInfo = (serverAPI: ServerAPI) => async (info: any) => {
     info,
   });
 };
+
+export const createSetApp =
+  (serverAPI: ServerAPI) =>
+  async (app : string ) =>
+    await serverAPI.callPluginMethod(ServerAPIMethods.SET_APP, {
+      app,
+    });
 
 export const createSetSetting =
   (serverAPI: ServerAPI) =>
@@ -72,6 +94,7 @@ export const createServerApiHelpers = (serverAPI: ServerAPI) => {
     saveTdp: createSaveTdp(serverAPI),
     setPollTdp: createPollTdp(serverAPI),
     saveTdpProfiles: createSaveTdpProfiles(serverAPI),
+    setApp: createSetApp(serverAPI),
   };
 };
 

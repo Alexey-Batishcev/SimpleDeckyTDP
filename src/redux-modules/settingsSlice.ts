@@ -7,7 +7,7 @@ import {
   extractCurrentGameId,
 } from "../utils/constants";
 import { RootState } from "./store";
-import { GpuModes } from "../backend/utils";
+import { GpuModes, CpuGovernors, CpuEpp } from "../backend/utils";
 
 type Partial<T> = {
   [P in keyof T]?: T[P];
@@ -26,6 +26,10 @@ export type TdpProfile = {
   maxGpuFrequency?: number;
   fixedGpuFrequency?: number;
   gpuMode: GpuModes;
+  cpuGov: CpuGovernors;
+  cpuEpp: CpuEpp;
+  minCpuFrequency?: number;
+  maxCpuFrequency?: number;
 };
 
 export type TdpProfiles = {
@@ -47,6 +51,8 @@ export interface SettingsState extends TdpRangeState, PollState {
   enableTdpProfiles: boolean;
   minGpuFrequency?: number;
   maxGpuFrequency?: number;
+  minCpuFrequency?: number;
+  maxCpuFrequency?: number;
 }
 
 export type InitialStateType = Partial<SettingsState>;
@@ -66,10 +72,15 @@ const initialState: SettingsState = {
       tdp: DEFAULT_START_TDP,
       cpuBoost: true,
       smt: true,
-      gpuMode: GpuModes.DEFAULT,
+      gpuMode: GpuModes.AUTO,
+      cpuGov : CpuGovernors.POWERSAVE,
+      cpuEpp : CpuEpp.POWER,
       minGpuFrequency: undefined,
       maxGpuFrequency: undefined,
       fixedGpuFrequency: undefined,
+      minCpuFrequency: undefined,
+      maxCpuFrequency: undefined,
+      
     },
   },
   pollEnabled: false,
@@ -89,6 +100,7 @@ export const settingsSlice = createSlice({
     },
     updateInitialLoad: (state, action: PayloadAction<InitialStateType>) => {
       const { minGpuFrequency, maxGpuFrequency } = action.payload;
+      const { minCpuFrequency, maxCpuFrequency } = action.payload;
       state.initialLoad = false;
       state.minTdp = action.payload.minTdp || 3;
       state.maxTdp = action.payload.maxTdp || 15;
@@ -102,13 +114,24 @@ export const settingsSlice = createSlice({
       }
       state.minGpuFrequency = minGpuFrequency;
       state.maxGpuFrequency = maxGpuFrequency;
+      state.minCpuFrequency = minCpuFrequency;
+      state.maxCpuFrequency = maxCpuFrequency;
+      
       // set default min/max gpu frequency if not set
+      if (!state.tdpProfiles.default.minCpuFrequency && minCpuFrequency) {
+        state.tdpProfiles.default.minCpuFrequency = minCpuFrequency;
+      }
+      if (!state.tdpProfiles.default.maxCpuFrequency && maxCpuFrequency) {
+        state.tdpProfiles.default.maxCpuFrequency = maxCpuFrequency;
+      }
+
       if (!state.tdpProfiles.default.minGpuFrequency && minGpuFrequency) {
         state.tdpProfiles.default.minGpuFrequency = minGpuFrequency;
       }
       if (!state.tdpProfiles.default.maxGpuFrequency && maxGpuFrequency) {
         state.tdpProfiles.default.maxGpuFrequency = maxGpuFrequency;
       }
+      
       if (
         !state.tdpProfiles.default.fixedGpuFrequency &&
         minGpuFrequency &&
@@ -134,6 +157,31 @@ export const settingsSlice = createSlice({
         set(state.tdpProfiles, `${currentGameId}.cpuBoost`, cpuBoost);
       } else {
         set(state.tdpProfiles, `default.cpuBoost`, cpuBoost);
+      }
+    },
+    setCpuFrequency: (
+      state,
+      action: PayloadAction<{ min?: number; max?: number }>
+    ) => {
+      const { min, max } = action.payload;
+
+      const { currentGameId, enableTdpProfiles } = state;
+
+      if (min) {
+        // set min value
+        if (enableTdpProfiles) {
+          state.tdpProfiles[currentGameId].minCpuFrequency = min;
+        } else {
+          state.tdpProfiles.default.minCpuFrequency = min;
+        }
+      }
+      if (max) {
+        // set max value
+        if (enableTdpProfiles) {
+          state.tdpProfiles[currentGameId].maxCpuFrequency = max;
+        } else {
+          state.tdpProfiles.default.maxCpuFrequency = max;
+        }
       }
     },
     setGpuFrequency: (
@@ -193,6 +241,24 @@ export const settingsSlice = createSlice({
         }
       } else {
         set(state.tdpProfiles, `default.gpuMode`, newGpuMode);
+      }
+    },
+    setCpuGov: (state, action: PayloadAction<CpuGovernors>) => {
+      const newCpuGov = action.payload;
+      const { currentGameId, enableTdpProfiles } = state;
+      if (enableTdpProfiles) {
+        set(state.tdpProfiles, `${currentGameId}.cpuGov`, newCpuGov);
+      } else {
+        set(state.tdpProfiles, `default.cpuGov`, newCpuGov);
+      }
+     },
+    setCpuEpp: (state, action: PayloadAction<CpuEpp>) => {
+      const newCpuEpp = action.payload;
+      const { currentGameId, enableTdpProfiles } = state;
+      if (enableTdpProfiles) {
+        set(state.tdpProfiles, `${currentGameId}.cpuEpp`, newCpuEpp);
+      } else {
+        set(state.tdpProfiles, `default.cpuEpp`, newCpuEpp);
       }
     },
     setSmt: (state, action: PayloadAction<boolean>) => {
@@ -323,6 +389,15 @@ export const getCurrentGpuFrequencySelector = (state: RootState) => {
   };
 };
 
+export const getCurrentCpuFrequencySelector = (state: RootState) => {
+  const activeGameId = activeGameIdSelector(state);
+
+  return {
+    currentMin: state.settings.tdpProfiles[activeGameId].minCpuFrequency,
+    currentMax: state.settings.tdpProfiles[activeGameId].maxCpuFrequency,
+  };
+};
+
 export const getCurrentFixedGpuFrequencySelector = (state: RootState) => {
   const activeGameId = activeGameIdSelector(state);
 
@@ -336,6 +411,13 @@ export const getGpuFrequencyRangeSelector = (state: RootState) => {
   };
 };
 
+export const getCpuFrequencyRangeSelector = (state: RootState) => {
+  return {
+    min: state.settings.minCpuFrequency,
+    max: state.settings.maxCpuFrequency,
+  };
+};
+
 export const getGpuModeSelector = (state: RootState) => {
   const {
     activeGameId,
@@ -343,6 +425,24 @@ export const getGpuModeSelector = (state: RootState) => {
   } = activeTdpProfileSelector(state);
 
   return { activeGameId, gpuMode };
+};
+
+export const getCpuGovSelector = (state: RootState) => {
+  const {
+    activeGameId,
+    tdpProfile: { cpuGov },
+  } = activeTdpProfileSelector(state);
+
+  return { activeGameId, cpuGov };
+};
+
+export const getCpuEppSelector = (state: RootState) => {
+  const {
+    activeGameId,
+    tdpProfile: { cpuEpp },
+  } = activeTdpProfileSelector(state);
+
+  return { activeGameId, cpuEpp };
 };
 
 // Action creators are generated for each case reducer function
@@ -358,7 +458,10 @@ export const {
   setCpuBoost,
   setSmt,
   setGpuMode,
+  setCpuGov,
+  setCpuEpp,
   setGpuFrequency,
+  setCpuFrequency,
   setFixedGpuFrequency,
   setDisableBackgroundPolling,
 } = settingsSlice.actions;

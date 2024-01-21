@@ -1,7 +1,8 @@
 from enum import Enum
 
 class GpuModes(Enum):
-    DEFAULT = "DEFAULT"
+    LOW = "LOW"
+    AUTO = "AUTO"
     RANGE = "RANGE"
     FIXED = "FIXED"
 

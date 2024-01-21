@@ -6,7 +6,7 @@ import { TdpSlider } from "./components/molecules/TdpSlider";
 import { PollTdp } from "./components/molecules/PollTdp";
 import { store } from "./redux-modules/store";
 import { Provider } from "react-redux";
-import { createServerApiHelpers, saveServerApi } from "./backend/utils";
+import { createServerApiHelpers, saveServerApi , setApp } from "./backend/utils";
 import { TdpProfiles } from "./components/molecules/TdpProfiles";
 import {
   currentGameInfoListener,
@@ -17,6 +17,12 @@ import { useIsInitiallyLoading } from "./hooks/useInitialState";
 import { cleanupAction } from "./redux-modules/extraActions";
 import { CpuFeatureToggles } from "./components/atoms/CpuFeatureToggles";
 import Gpu from "./components/molecules/Gpu";
+import Cpu from "./components/molecules/Cpu";
+//import CpuGovSlider from "./components/atoms/CpuGovSlider";
+//import { extractCurrentGameId } from "./utils/constants";
+import CpuEppSlider from "./components/atoms/CpuEppSlider";
+import { extractCurrentGameId } from "./utils/constants";
+
 
 const Content: FC<{ serverAPI?: ServerAPI }> = memo(({}) => {
   const loading = useIsInitiallyLoading();
@@ -25,12 +31,11 @@ const Content: FC<{ serverAPI?: ServerAPI }> = memo(({}) => {
     <>
       {!loading && (
         <>
-          <TdpSlider />
           <TdpProfiles />
-          <CpuFeatureToggles />
+          <TdpSlider />
+          <Cpu/>,
           <Gpu />
           <TdpRange />
-          <PollTdp />
         </>
       )}
     </>
@@ -50,6 +55,9 @@ export default definePlugin((serverApi: ServerAPI) => {
 
   const { getSettings } = createServerApiHelpers(serverApi);
 
+  //var app = Router.MainRunningApp?.display_name;
+  //setApp(app);
+
   // fetch settings from backend, send into redux state
   getSettings().then((result) => {
     if (result.success) {
@@ -63,6 +71,17 @@ export default definePlugin((serverApi: ServerAPI) => {
     }
   });
 
+  /*
+  // info backend about current app
+  
+  const { setApp } = createServerApiHelpers(serverApi);
+      
+  setInterval(() => {
+    var app_now = extractCurrentGameId();
+    setApp(app_now);
+//    app = app_now;
+  }, 1000*10);
+  */
   const onUnmount = currentGameInfoListener();
   const unregisterSuspendListener = suspendEventListener();
 

@@ -5,6 +5,7 @@ import time
 import subprocess
 from plugin_enums import GpuModes, GpuRange
 from plugin_settings import get_saved_settings
+from plugin_settings import set_value_in_file 
 
 GPU_DEVICE_PATH = glob.glob("/sys/class/drm/card?/device")[0]
 GPU_FREQUENCY_PATH = f"{GPU_DEVICE_PATH}/pp_od_clk_voltage"
@@ -29,7 +30,7 @@ def get_gpu_frequency_range():
 
 def set_gpu_frequency(current_game_id):
     settings = get_saved_settings()
-    gpu_mode = GpuModes.DEFAULT.value
+    gpu_mode = GpuModes.AUTO.value
     tdp_profile = settings.get("tdpProfiles").get("default")
 
     if settings.get("enableTdpProfiles"):
@@ -39,9 +40,11 @@ def set_gpu_frequency(current_game_id):
     if tdp_profile.get("gpuMode"):
         gpu_mode = tdp_profile.get("gpuMode")
 
-    # decky_plugin.logger.info(f'{__name__} {current_game_id} {gpu_mode} {tdp_profile}')
+    decky_plugin.logger.info(f'set_gpu_frequency {gpu_mode} for {current_game_id} ')
 
-    if gpu_mode == GpuModes.DEFAULT.value:
+    if gpu_mode == GpuModes.AUTO.value:
+        return set_value_in_file(GPU_LEVEL_PATH, "auto")
+        '''
         try:
             # change back to auto
             with open(GPU_LEVEL_PATH,'w') as f:
@@ -51,13 +54,17 @@ def set_gpu_frequency(current_game_id):
         except Exception as e:
             decky_plugin.logger.error(f"{__name__} default mode error {e}")
             return False
+        '''
+    elif gpu_mode == GpuModes.LOW.value:
+        return set_value_in_file(GPU_LEVEL_PATH, "low")
     elif gpu_mode == GpuModes.RANGE.value:
         new_min = tdp_profile.get(GpuRange.MIN.value, 0)
         new_max = tdp_profile.get(GpuRange.MAX.value, 0)
-
+        set_value_in_file(GPU_LEVEL_PATH, "auto")
         return set_gpu_frequency_range(new_min, new_max)
     elif gpu_mode == GpuModes.FIXED.value:
         new_freq = tdp_profile.get(GpuRange.FIXED.value, 0)
+        set_value_in_file(GPU_LEVEL_PATH, "auto")
         return set_gpu_frequency_range(new_freq, new_freq)
     return True
 

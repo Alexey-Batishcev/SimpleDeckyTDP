@@ -22,7 +22,7 @@ export const TdpSlider: FC = () => {
           label="Watts"
           min={minTdp}
           max={maxTdp}
-          step={0.5}
+          step={0.2}
           onChange={(newTdp) => setTdp(id, newTdp)}
           notchTicksVisible
           showValue

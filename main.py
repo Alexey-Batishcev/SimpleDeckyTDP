@@ -4,7 +4,7 @@ import decky_plugin
 import logging
 import os
 from plugin_settings import set_all_tdp_profiles, get_saved_settings, get_tdp_profile, get_active_tdp_profile, set_setting as persist_setting
-from cpu_utils import ryzenadj, set_cpu_boost, set_smt, set_cpu_governor, set_cpu_power_preferences, set_cpu_max_freq, set_cpu_min_freq
+from cpu_utils import get_cpu_frequency_range, ryzenadj, set_cpu_boost, set_smt, set_cpu_governor, set_cpu_power_preferences, set_cpu_max_freq, set_cpu_min_freq
 from gpu_utils import get_gpu_frequency_range, set_gpu_frequency
 import asyncio
 
@@ -19,11 +19,13 @@ class Plugin:
             settings = get_saved_settings()
             try:
                 gpu_min, gpu_max = get_gpu_frequency_range()
+                cpu_min, cpu_max = get_cpu_frequency_range()
                 if (gpu_min and gpu_max):
                     settings['minGpuFrequency'] = gpu_min
                     settings['maxGpuFrequency'] = gpu_max
-                    settings['minCpuFrequency'] = 400
-                    settings['maxCpuFrequency'] = 6200
+                if (cpu_min and cpu_max):   
+                    settings['minCpuFrequency'] = cpu_min
+                    settings['maxCpuFrequency'] = cpu_max
 
             except Exception as e:
                 logging.error(f"get_settings failed to get GPU clocks {e}")

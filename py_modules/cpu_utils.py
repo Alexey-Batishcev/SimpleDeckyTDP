@@ -22,6 +22,32 @@ CPU_FREQ_MIN_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq'
 CPU_INFO_MAX_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_max_freq'
 CPU_INFO_MIN_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_min_freq'
 
+
+def get_cpu_frequency_range():
+    logging.debug(f"get_cpu_frequency_range")
+    try:
+        fmin = 0
+        fmax = 10000000
+        for file in [CPU_FREQ_MAX_PATH, CPU_FREQ_MIN_PATH]:
+            paths = glob.glob(file)
+            #logging.debug(f'set_value_in_file {paths}')
+            for path in paths:
+                if os.path.exists(path):
+                    #pstate = 'active' if enabled else 'passive'
+                    with open(path, 'r') as f:
+                        s = f.readline()
+                        f.close()
+                if "min_freq" in path:
+                    fmin = max(fmin,int(s))
+                elif "max_freq" in path:
+                    fmax = min(fmax, int(s))
+        logging.debug(f"get_cpu_frequency_range {fmin} - {fmax}")
+        return int(0.001*fmin), int(0.001*fmax)
+    except Exception as e:
+        logging.error(e)
+        return None
+
+
 def modprobe_acpi_call():
     os.system("modprobe acpi_call")
     result = subprocess.run(["modprobe", "acpi_call"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

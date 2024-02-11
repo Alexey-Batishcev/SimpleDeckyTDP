@@ -9,6 +9,8 @@ import { useSelector } from "react-redux";
 import { getCpuFrequencyRangeSelector } from "../../redux-modules/settingsSlice";
 //import GpuFixedSlider from "../atoms/GpuFixedSlider";
 import { CpuGovernors } from "../../backend/utils";
+import { useCpuStatus } from "../../hooks/useCpuStatus";
+import { CpuFeatureToggles } from "../atoms/CpuFeatureToggles";
 
 const Cpu = () => {
   const { min, max } = useSelector(getCpuFrequencyRangeSelector);
@@ -20,13 +22,20 @@ const Cpu = () => {
 
   const { cpuGov } = useCpuGov();
   //const { cpuEpp } = useCpuEpp();
+  const { cpuStatus } = useCpuStatus();
+  
   
   return (
     <PanelSection title="CPU">
+      { !cpuStatus && (
+        <PanelSectionRow>
+        <CpuFeatureToggles />
+      </PanelSectionRow>)
+      }
       <PanelSectionRow>
         <CpuGovSlider />
       </PanelSectionRow>
-      {cpuGov === CpuGovernors.POWERSAVE && (
+      {cpuGov === CpuGovernors.POWERSAVE && cpuStatus && (
       <PanelSectionRow>
         <CpuEppSlider />
       </PanelSectionRow>

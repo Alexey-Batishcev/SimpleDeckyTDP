@@ -4,7 +4,7 @@ import decky_plugin
 import logging
 import os
 from plugin_settings import set_all_tdp_profiles, get_saved_settings, get_tdp_profile, get_active_tdp_profile, set_setting as persist_setting
-from cpu_utils import get_cpu_frequency_range, ryzenadj, set_cpu_boost, set_smt, set_cpu_governor, set_cpu_power_preferences, set_cpu_max_freq, set_cpu_min_freq
+from cpu_utils import get_epp_status, get_cpu_frequency_range, ryzenadj, set_cpu_boost, set_smt, set_cpu_governor, set_cpu_power_preferences, set_cpu_max_freq, set_cpu_min_freq
 from gpu_utils import get_gpu_frequency_range, set_gpu_frequency
 import asyncio
 
@@ -26,6 +26,11 @@ class Plugin:
                 if (cpu_min and cpu_max):   
                     settings['minCpuFrequency'] = cpu_min
                     settings['maxCpuFrequency'] = cpu_max
+                #pstate=enabled === True
+                epp, state = get_epp_status()
+                if (epp) & ('active' not in state):
+                    epp = False
+                settings['cpuStatus'] = epp
 
             except Exception as e:
                 logging.error(f"get_settings failed to get GPU clocks {e}")
@@ -72,8 +77,6 @@ class Plugin:
         default_min_freq = default_tdp_profile.get('minCpuFrequency', 400)
         default_gpu_mode = default_tdp_profile.get('gpuMode', 'AUTO')
         
-        
-
         if settings.get('enableTdpProfiles'):
             tdp_profile = get_tdp_profile(app)
             cpu_boost = tdp_profile.get('cpuBoost', default_cpu_boost)
@@ -87,7 +90,9 @@ class Plugin:
                 'minCpuFrequency', default_min_freq)
             game_gpu_mode = tdp_profile.get('gpuMode', default_gpu_mode)
 
-            set_cpu_boost(cpu_boost)
+            epp, _ = get_epp_status()
+            if epp is False:
+                set_cpu_boost(cpu_boost)
             set_smt(game_smt)
             ryzenadj(game_tdp)
             set_cpu_governor(game_gov)

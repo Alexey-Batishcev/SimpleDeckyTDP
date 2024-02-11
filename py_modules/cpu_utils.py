@@ -21,14 +21,39 @@ CPU_FREQ_MAX_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq'
 CPU_FREQ_MIN_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq'
 CPU_INFO_MAX_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_max_freq'
 CPU_INFO_MIN_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_min_freq'
+CPU_AV_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/scaling_available_frequencies'
 
 
-def get_cpu_frequency_range():
+def get_cpu_frequency_range_for_acpi():
     logging.debug(f"get_cpu_frequency_range")
     try:
         fmin = 0
         fmax = 10000000
-        for file in [CPU_FREQ_MAX_PATH, CPU_FREQ_MIN_PATH]:
+        paths = glob.glob(CPU_AV_FREQ_PATH)
+            #logging.debug(f'set_value_in_file {paths}')
+        for path in paths:
+            if os.path.exists(path):
+                    #pstate = 'active' if enabled else 'passive'
+                with open(path, 'r') as f:
+                    s = f.read()
+                    logging.debug(f"get_cpu_frequency_range_line {s}")
+                    f.close()
+                freq = s.strip().split(' ')
+                fmin = max(fmin, int(freq[-1]))
+                fmax = min(fmax, int(freq[0]))
+        logging.debug(f"get_cpu_frequency_range {fmin} - {fmax}")
+        return int(0.001*fmin), int(0.001*fmax)
+    except Exception as e:
+        logging.error(e)
+        return None
+
+
+def get_cpu_frequency_range_for_epp():
+    logging.debug(f"get_cpu_frequency_range")
+    try:
+        fmin = 0
+        fmax = 10000000
+        for file in [CPU_INFO_MAX_FREQ_PATH, CPU_INFO_MIN_FREQ_PATH]:
             paths = glob.glob(file)
             #logging.debug(f'set_value_in_file {paths}')
             for path in paths:
@@ -47,6 +72,23 @@ def get_cpu_frequency_range():
         logging.error(e)
         return None
 
+def get_cpu_frequency_range():
+    epp, _ = get_epp_status()
+    if epp:
+        return get_cpu_frequency_range_for_epp()
+    else:
+         return get_cpu_frequency_range_for_acpi()
+
+def get_epp_status():
+    result = os.path.exists(AMD_PSTATE_PATH)
+    state = None
+    logging.debug(f"get_epp_status {result}")
+    if result:
+        #pstate = 'active' if enabled else 'passive'
+        with open(AMD_PSTATE_PATH, 'r') as f:
+            state = f.readline()
+            f.close()
+    return result, state  
 
 def modprobe_acpi_call():
     os.system("modprobe acpi_call")
@@ -78,8 +120,8 @@ def ryzenadj(tdp: int):
                     return legion_go.ryzenadj(tdp)
 
         stapm_tdp = int(tdp*1000)
-        slow_tdp = int(1.05*tdp*1000)
-        fast_tdp = int(1.1*tdp*1000)
+        slow_tdp = int(1.1*tdp*1000)
+        fast_tdp = int(1.2*tdp*1000)
 
         if RYZENADJ_PATH:
             commands = [RYZENADJ_PATH, '--stapm-limit', f"{stapm_tdp}", '--fast-limit', f"{fast_tdp}", '--slow-limit', f"{slow_tdp}"]
@@ -122,8 +164,8 @@ def set_cpu_min_freq(fmin = 400):
     result = set_value_in_file(CPU_FREQ_MIN_PATH, fmin*1000)
 
 def set_cpu_boost(enabled = True):
-    pstate = 'active' if enabled else 'passive'
-    result = set_value_in_file(AMD_PSTATE_PATH, pstate)
+    #pstate = 'active' if enabled else 'passive'
+    #result = set_value_in_file(AMD_PSTATE_PATH, pstate)
     boost = 1 if enabled else 0
     result = set_value_in_file(BOOST_PATH, boost)       
     return result

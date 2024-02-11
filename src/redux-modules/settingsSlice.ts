@@ -30,6 +30,7 @@ export type TdpProfile = {
   cpuEpp: CpuEpp;
   minCpuFrequency?: number;
   maxCpuFrequency?: number;
+  //cpuStatus: boolean;
 };
 
 export type TdpProfiles = {
@@ -53,6 +54,7 @@ export interface SettingsState extends TdpRangeState, PollState {
   maxGpuFrequency?: number;
   minCpuFrequency?: number;
   maxCpuFrequency?: number;
+  cpuStatus?: boolean;
 }
 
 export type InitialStateType = Partial<SettingsState>;
@@ -67,6 +69,7 @@ const initialState: SettingsState = {
   maxTdp: 15,
   initialLoad: true,
   enableTdpProfiles: false,
+  cpuStatus: false,
   tdpProfiles: {
     default: {
       tdp: DEFAULT_START_TDP,
@@ -80,7 +83,7 @@ const initialState: SettingsState = {
       fixedGpuFrequency: undefined,
       minCpuFrequency: undefined,
       maxCpuFrequency: undefined,
-      
+      //cpuStatus: false,    
     },
   },
   pollEnabled: false,
@@ -101,6 +104,7 @@ export const settingsSlice = createSlice({
     updateInitialLoad: (state, action: PayloadAction<InitialStateType>) => {
       const { minGpuFrequency, maxGpuFrequency } = action.payload;
       const { minCpuFrequency, maxCpuFrequency } = action.payload;
+      const { cpuStatus } = action.payload;
       state.initialLoad = false;
       state.minTdp = action.payload.minTdp || 3;
       state.maxTdp = action.payload.maxTdp || 15;
@@ -116,6 +120,7 @@ export const settingsSlice = createSlice({
       state.maxGpuFrequency = maxGpuFrequency;
       state.minCpuFrequency = minCpuFrequency;
       state.maxCpuFrequency = maxCpuFrequency;
+      state.cpuStatus = cpuStatus;
       
       // set default min/max gpu frequency if not set
       if (!state.tdpProfiles.default.minCpuFrequency && minCpuFrequency) {
@@ -271,6 +276,16 @@ export const settingsSlice = createSlice({
         set(state.tdpProfiles, `default.smt`, smt);
       }
     },
+    setCpuStatus: (state, action: PayloadAction<boolean>) => {
+      const cpuStatus = action.payload;
+      const { currentGameId, enableTdpProfiles } = state;
+      /*
+      if (enableTdpProfiles) {
+        set(state.tdpProfiles, `${currentGameId}.cpuStatus`, cpuStatus);
+      } else {
+        set(state.tdpProfiles, `default.cpuStatus`, cpuStatus);
+      }*/
+    },
     setDisableBackgroundPolling: (state, action: PayloadAction<boolean>) => {
       const enabled = action.payload;
       state.disableBackgroundPolling = enabled;
@@ -360,6 +375,12 @@ export const getCurrentSmtSelector = (state: RootState) => {
   const { tdpProfile: activeTdpProfile } = activeTdpProfileSelector(state);
 
   return Boolean(activeTdpProfile.smt);
+};
+
+export const getCpuStatusSelector = (state: RootState) => {
+  //const { tdpProfile: activeTdpProfile } = activeTdpProfileSelector(state);
+
+  return Boolean(state.settings.cpuStatus);
 };
 
 export const getCurrentTdpInfoSelector = (state: RootState) => {
@@ -457,6 +478,7 @@ export const {
   setEnableTdpProfiles,
   setCpuBoost,
   setSmt,
+  setCpuStatus,
   setGpuMode,
   setCpuGov,
   setCpuEpp,

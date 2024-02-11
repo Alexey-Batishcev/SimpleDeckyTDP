@@ -10,6 +10,13 @@ enum Epp {
   PERFORMANCE = 3,
 }
 
+enum Alias {
+  POWER = "pwr",
+  BALANCE_POWER = "bal_pwr",
+  BALANCE_PERFORMANCE = "bal_perf",
+  PERFORMANCE = "perf",
+}
+
 const CpuEppSlider: FC = () => {
   const { cpuEpp, setCpuEpp } = useCpuEpp();
 
@@ -21,7 +28,7 @@ const CpuEppSlider: FC = () => {
   const MODES: NotchLabel[] = Object.keys(Epp)
     .filter((key) => isNaN(Number(key)))
     .map((mode, idx) => {
-      return { notchIndex: idx, label: capitalize(mode), value: idx };
+      return { notchIndex: idx, label: Alias[idx], value: idx };
     });
 
   // known bug: typescript has incorrect type for reverse mapping from enums
@@ -30,7 +37,7 @@ const CpuEppSlider: FC = () => {
   return (
     <>
       <SliderField
-        label="CPU Governor"
+        label="CPU Power Pref"
         value={sliderValue || Epp.POWER}
         min={0}
         max={MODES.length - 1}

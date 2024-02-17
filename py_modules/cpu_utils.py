@@ -25,22 +25,27 @@ CPU_AV_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/scaling_available_frequen
 
 
 def get_cpu_frequency_range_for_acpi():
-    logging.debug(f"get_cpu_frequency_range")
+    logging.debug(f"get_cpu_frequency_range_for_acpi")
     try:
         fmin = 0
         fmax = 10000000
         paths = glob.glob(CPU_AV_FREQ_PATH)
-            #logging.debug(f'set_value_in_file {paths}')
+        #logging.debug(f'get_cpu_frequency_range_for_acpi {paths}')
         for path in paths:
-            if os.path.exists(path):
+            try:
+                if os.path.exists(path):
                     #pstate = 'active' if enabled else 'passive'
-                with open(path, 'r') as f:
-                    s = f.read()
-                    logging.debug(f"get_cpu_frequency_range_line {s}")
-                    f.close()
+                
+                    logging.debug(f'open {path}')
+                    with open(path, 'r') as f:
+                        s = f.read()
+                        logging.debug(f"get_cpu_frequency_range_line {s}")
+                        f.close()
                 freq = s.strip().split(' ')
                 fmin = max(fmin, int(freq[-1]))
                 fmax = min(fmax, int(freq[0]))
+            except:
+                continue
         logging.debug(f"get_cpu_frequency_range {fmin} - {fmax}")
         return int(0.001*fmin), int(0.001*fmax)
     except Exception as e:
@@ -49,23 +54,26 @@ def get_cpu_frequency_range_for_acpi():
 
 
 def get_cpu_frequency_range_for_epp():
-    logging.debug(f"get_cpu_frequency_range")
+    logging.debug(f"get_cpu_frequency_range_for_epp")
     try:
         fmin = 0
         fmax = 10000000
         for file in [CPU_INFO_MAX_FREQ_PATH, CPU_INFO_MIN_FREQ_PATH]:
             paths = glob.glob(file)
-            #logging.debug(f'set_value_in_file {paths}')
+            #logging.debug(f'get_cpu_frequency_range_for_epp {paths}')
             for path in paths:
-                if os.path.exists(path):
+                try:
+                    if os.path.exists(path):
                     #pstate = 'active' if enabled else 'passive'
-                    with open(path, 'r') as f:
-                        s = f.readline()
-                        f.close()
-                if "min_freq" in path:
-                    fmin = max(fmin,int(s))
-                elif "max_freq" in path:
-                    fmax = min(fmax, int(s))
+                        with open(path, 'r') as f:
+                            s = f.readline()
+                            f.close()
+                    if "min_freq" in path:
+                        fmin = max(fmin,int(s))
+                    elif "max_freq" in path:
+                        fmax = min(fmax, int(s))
+                except:
+                    continue
         logging.debug(f"get_cpu_frequency_range {fmin} - {fmax}")
         return int(0.001*fmin), int(0.001*fmax)
     except Exception as e:
@@ -120,8 +128,8 @@ def ryzenadj(tdp: int):
                     return legion_go.ryzenadj(tdp)
 
         stapm_tdp = int(tdp*1000)
-        slow_tdp = int(1.1*tdp*1000)
-        fast_tdp = int(1.2*tdp*1000)
+        slow_tdp = int(tdp*1000)
+        fast_tdp = int(tdp*1000)
 
         if RYZENADJ_PATH:
             commands = [RYZENADJ_PATH, '--stapm-limit', f"{stapm_tdp}", '--fast-limit', f"{fast_tdp}", '--slow-limit', f"{slow_tdp}"]
@@ -151,17 +159,34 @@ def set_value_in_file(file, value):
 '''
 
 def set_cpu_governor(governor = 'powersave'):
-    result = set_value_in_file(AMD_EPP_GOV_PATH, governor)
-    return result
+    commands = ['cpupower', 'frequency-set', '--governor', f"{governor}"]
+    logging.info(f'cpupower command: {commands}')
+    results = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    returncode, stdout = results.returncode, results.stdout
+    logging.info(f'cpupower result: {returncode} {stdout}')
+   
+    #result = set_value_in_file(AMD_EPP_GOV_PATH, governor)
+    #return result
 
 def set_cpu_power_preferences(power_pref = 'power'):
     result = set_value_in_file(AMD_EPP_POW_PATH, power_pref)
 
 def set_cpu_max_freq(fmax = 5000):
-    result = set_value_in_file(CPU_FREQ_MAX_PATH, fmax*1000)
+    commands = ['cpupower', 'frequency-set', '--max', f"{fmax*1000}"]
+    logging.info(f'cpupower command: {commands}')
+    results = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    returncode, stdout = results.returncode, results.stdout
+    logging.info(f'cpupower result: {returncode} {stdout}')
+    #result = set_value_in_file(CPU_FREQ_MAX_PATH, fmax*1000)
 
 def set_cpu_min_freq(fmin = 400):
-    result = set_value_in_file(CPU_FREQ_MIN_PATH, fmin*1000)
+    commands = ['cpupower', 'frequency-set', '--min', f"{fmin*1000}"]
+    logging.info(f'cpupower command: {commands}')
+    results = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    returncode, stdout = results.returncode, results.stdout
+    logging.info(f'cpupower result: {returncode} {stdout}')
+   
+    #result = set_value_in_file(CPU_FREQ_MIN_PATH, fmin*1000)
 
 def set_cpu_boost(enabled = True):
     #pstate = 'active' if enabled else 'passive'

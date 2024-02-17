@@ -66,6 +66,7 @@ def set_gpu_frequency(current_game_id):
         new_freq = tdp_profile.get(GpuRange.FIXED.value, 0)
         set_value_in_file(GPU_LEVEL_PATH, "auto")
         return set_gpu_frequency_range(new_freq, new_freq)
+        
     return True
 
 def set_gpu_frequency_range(new_min: int, new_max: int):

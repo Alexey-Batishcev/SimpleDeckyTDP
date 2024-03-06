@@ -1,30 +1,13 @@
 import { FC } from "react";
 import { SliderField, NotchLabel } from "decky-frontend-lib";
-import { capitalize } from "lodash";
+//import { capitalize } from "lodash";
 import useCpuGov from "../../hooks/useCpuGov";
 import { useCpuStatus } from "../../hooks/useCpuStatus";
 
 enum Governor {
   POWERSAVE = 0,
-  PERFORMANCE = 1,
-  CONSERVATIVE = 2,
-  USERSPACE = 3,
-  ONDEMAND = 4,
-  SCHEDUTIL = 5,
-}
-
-enum GovernorEpp {
-  POWERSAVE = 0,
-  PERFORMANCE = 1,
-}
-
-enum Alias {
-  POWERSAVE = 'pwrsave',
-  PERFORMANCE = 'perf',
-  CONSERVATIVE = 'consrv',
-  USERSPACE = 'usrspc',
-  ONDEMAND = 'ondmnd',
-  SCHEDUTIL = 'sched',
+  BALANCE = 1,
+  PERFORMANCE = 2,
 }
 
 //conservative ondemand userspace powersave performance schedutil 
@@ -37,31 +20,22 @@ const CpuGovSlider: FC = () => {
     return setCpuGov(Governor[value]);
   };
 
-  const { cpuStatus } = useCpuStatus();
+  //const { cpuStatus } = useCpuStatus();
   
-  if (cpuStatus) {
-    var MODES: NotchLabel[] = Object.keys(GovernorEpp)
-    .filter((key) => isNaN(Number(key)))
-    .map((mode, idx) => {
-      return { notchIndex: idx, label: Alias[mode], value: idx };
-    });
-  } else {
-    var MODES: NotchLabel[] = Object.keys(Governor)
-    .filter((key) => isNaN(Number(key)))
-    .map((mode, idx) => {
-      return { notchIndex: idx, label: Alias[mode], value: idx };
-    });
-  }
-
+ 
+  var MODES: NotchLabel[] = Object.keys(Governor)
+  .filter((key) => isNaN(Number(key)))
+  .map((mode, idx) => {
+    return { notchIndex: idx, label: mode, value: idx };
+  });
   
-
   // known bug: typescript has incorrect type for reverse mapping from enums
   const sliderValue = Governor[cpuGov] as any;
 
   return (
     <>
       <SliderField
-        label="CPU Governor"
+        label="CPU POWER"
         value={sliderValue || Governor.POWERSAVE}
         min={0}
         max={MODES.length - 1}

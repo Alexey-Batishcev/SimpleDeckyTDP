@@ -10,12 +10,8 @@ export enum GpuModes {
 
 export enum CpuGovernors {
   POWERSAVE = "POWERSAVE",
+  BALANCE = "BALANCE",
   PERFORMANCE = "PERFORMANCE",
-  CONSERVATIVE = "CONSERVATIVE",
-  USERSPACE = "USERSPACE",
-  ONDEMAND = "ONDEMAND",
-  SCHEDUTIL = "SCHEDUTIL",
-
 }
 
 export enum CpuEpp {

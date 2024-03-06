@@ -34,7 +34,7 @@ const CpuRangeSliders = () => {
   return (
     <>
       <SliderField
-        label={"Minimum Frequency Limit"}
+        label={"MIN FREQ"}
         value={currentMin}
         step={50}
         description={`${currentMin} MHz`}
@@ -47,7 +47,7 @@ const CpuRangeSliders = () => {
         }}
       />
       <SliderField
-        label={"Maximum Frequency Limit"}
+        label={"MAX FREQ"}
         value={currentMax}
         step={50}
         description={`${currentMax} MHz`}

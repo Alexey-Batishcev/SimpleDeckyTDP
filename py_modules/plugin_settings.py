@@ -22,9 +22,12 @@ setting_file.read()
 
 
 def deep_merge(origin, destination):
+    logging.info(f'{origin} : {destination}')
     for k, v in origin.items():
+        logging.info(f'{k}:{v}')
         if isinstance(v, dict):
             n = destination.setdefault(k, {})
+            logging.info(f'{k}:{n}')
             deep_merge(v, n)
         else:
             destination[k] = v

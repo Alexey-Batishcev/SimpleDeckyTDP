@@ -27,11 +27,6 @@ const Cpu = () => {
   
   return (
     <PanelSection title="CPU">
-      { !cpuStatus && (
-        <PanelSectionRow>
-        <CpuFeatureToggles />
-      </PanelSectionRow>)
-      }
       <PanelSectionRow>
         <CpuGovSlider />
       </PanelSectionRow>

@@ -29,7 +29,7 @@ const GpuFixedSlider = () => {
 
   return (
     <SliderField
-      label={"Frequency"}
+      label={"FREQ"}
       value={currentFrequency}
       description={`${currentFrequency} MHz`}
       step={50}

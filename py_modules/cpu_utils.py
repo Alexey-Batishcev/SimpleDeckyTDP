@@ -1,8 +1,9 @@
+from lib2to3.pgen2.token import BACKQUOTE
 import os
 import subprocess
 import shutil
 from unittest import result
-import decky_plugin
+#import decky_plugin
 import logging
 import plugin_settings
 from devices import legion_go
@@ -22,7 +23,15 @@ CPU_FREQ_MIN_PATH='/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq'
 CPU_INFO_MAX_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_max_freq'
 CPU_INFO_MIN_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_min_freq'
 CPU_AV_FREQ_PATH='/sys/devices/system/cpu/cpu*/cpufreq/scaling_available_frequencies'
+SCHEDUTIL_RATE_LIMIT='/sys/devices/system/cpu/cpufreq/schedutil/rate_limit_us'
+ONDEMAND_IGNORE_NICE_LOAD='/sys/devices/system/cpu/cpufreq/ondemand/ignore_nice_load'#0
+ONDEMAND_IO_IS_BUSY='/sys/devices/system/cpu/cpufreq/ondemand/io_is_busy'#0 -> 1
+ONDEMAND_POWERSAVE_BIAS='/sys/devices/system/cpu/cpufreq/ondemand/powersave_bias'#0
+ONDEMAND_SAMPLING_DOWN_FACTOR='/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor'#5 -> 1
+ONDEMAND_SAMPLING_RATE='/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate'#2000
+ONDEMAND_UP_THRESHOLD='/sys/devices/system/cpu/cpufreq/ondemand/up_threshold'#63 -> 35%
 
+governor_mapper = {'POWERSAVE':'powersave', 'BALANCE':'ondemand', 'PERFORMANCE':'performance'}
 
 def get_cpu_frequency_range_for_acpi():
     logging.debug(f"get_cpu_frequency_range_for_acpi")
@@ -129,7 +138,7 @@ def ryzenadj(tdp: int):
 
         stapm_tdp = int(tdp*1000)
         slow_tdp = int(tdp*1000)
-        fast_tdp = int(tdp*1000)
+        fast_tdp = int(1.2*tdp*1000)
 
         if RYZENADJ_PATH:
             commands = [RYZENADJ_PATH, '--stapm-limit', f"{stapm_tdp}", '--fast-limit', f"{fast_tdp}", '--slow-limit', f"{slow_tdp}"]
@@ -159,17 +168,28 @@ def set_value_in_file(file, value):
 '''
 
 def set_cpu_governor(governor = 'powersave'):
-    commands = ['cpupower', 'frequency-set', '--governor', f"{governor}"]
+    logging.info(f'set_cpu_governor: {governor}')
+    _gov = governor_mapper[governor]
+    commands = ['cpupower', 'frequency-set', '--governor', f"{_gov}"]
     logging.info(f'cpupower command: {commands}')
     results = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     returncode, stdout = results.returncode, results.stdout
     logging.info(f'cpupower result: {returncode} {stdout}')
+
+    if _gov == governor_mapper['BALANCE']:
+        #set_value_in_file(SCHEDUTIL_RATE_LIMIT, 500)
+        set_value_in_file(ONDEMAND_IO_IS_BUSY, 1)
+        set_value_in_file(ONDEMAND_UP_THRESHOLD, 35)
+        set_value_in_file(ONDEMAND_SAMPLING_DOWN_FACTOR, 1)
+    elif (_gov is governor_mapper['BALANCE']) and get_epp_status():
+        set_value_in_file(AMD_EPP_POW_PATH, 'BALANCE_PERFORMANCE')
+
    
     #result = set_value_in_file(AMD_EPP_GOV_PATH, governor)
-    #return result
 
 def set_cpu_power_preferences(power_pref = 'power'):
-    result = set_value_in_file(AMD_EPP_POW_PATH, power_pref)
+    logging.info(f'set_cpu_power_preferences: {power_pref}')
+    #result = set_value_in_file(AMD_EPP_POW_PATH, power_pref)
 
 def set_cpu_max_freq(fmax = 5000):
     commands = ['cpupower', 'frequency-set', '--max', f"{fmax*1000}"]

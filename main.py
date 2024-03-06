@@ -57,8 +57,6 @@ class Plugin:
             self.set_tdp(self.app)
             await asyncio.sleep(30)
 
-        return True
-
     async def set_app(self, app_in: str = "default"):
         decky_plugin.logger.info(f"Getting self.app as {self.app}")
         self.app = app_in
@@ -66,49 +64,54 @@ class Plugin:
 
     def set_tdp(app):
         decky_plugin.logger.info(f"set_tdp for {app}")
-        settings = get_saved_settings()
-        default_tdp_profile = get_tdp_profile('default')
-        default_smt = default_tdp_profile.get('smt', True)
-        default_cpu_boost = default_tdp_profile.get('cpuBoost', True)
-        default_tdp = default_tdp_profile.get('tdp', 12)
-        default_gov = default_tdp_profile.get('cpuGov', 'POWERSAVE')
-        default_pow_pref = default_tdp_profile.get('cpuEpp', 'POWER')
-        default_max_freq = default_tdp_profile.get('maxCpuFrequency', 5000)
-        default_min_freq = default_tdp_profile.get('minCpuFrequency', 400)
-        default_gpu_mode = default_tdp_profile.get('gpuMode', 'AUTO')
+        try:
+            settings = get_saved_settings()
+            logging.debug(f"get_tdp_profile for default")
+            default_tdp_profile = get_tdp_profile('default')
+            default_smt = default_tdp_profile.get('smt', True)
+            default_cpu_boost = default_tdp_profile.get('cpuBoost', True)
+            default_tdp = default_tdp_profile.get('tdp', 12)
+            default_gov = default_tdp_profile.get('cpuGov', 'balance')
+            default_pow_pref = default_tdp_profile.get('cpuEpp', 'power')
+            default_max_freq = default_tdp_profile.get('maxCpuFrequency', 5000)
+            default_min_freq = default_tdp_profile.get('minCpuFrequency', 400)
+            default_gpu_mode = default_tdp_profile.get('gpuMode', 'auto')
         
-        if settings.get('enableTdpProfiles'):
-            tdp_profile = get_tdp_profile(app)
-            cpu_boost = tdp_profile.get('cpuBoost', default_cpu_boost)
-            game_tdp = tdp_profile.get('tdp', default_tdp)
-            game_smt = tdp_profile.get('smt', default_smt)
-            game_gov = tdp_profile.get('cpuGov', default_gov).lower()
-            game_pow_pref = tdp_profile.get('cpuEpp', default_pow_pref).lower()
-            game_max_freq = tdp_profile.get(
-                'maxCpuFrequency', default_max_freq)
-            game_min_freq = tdp_profile.get(
-                'minCpuFrequency', default_min_freq)
-            game_gpu_mode = tdp_profile.get('gpuMode', default_gpu_mode)
+            if settings.get('enableTdpProfiles') & (app != 'default'):
+                tdp_profile = get_tdp_profile(app)
+                logging.debug(f"get_tdp_profile for {app}")
+                cpu_boost = tdp_profile.get('cpuBoost', default_cpu_boost)
+                game_tdp = tdp_profile.get('tdp', default_tdp)
+                game_smt = tdp_profile.get('smt', default_smt)
+                game_gov = tdp_profile.get('cpuGov', default_gov)
+                game_pow_pref = tdp_profile.get('cpuEpp', default_pow_pref)
+                game_max_freq = tdp_profile.get(
+                    'maxCpuFrequency', default_max_freq)
+                game_min_freq = tdp_profile.get(
+                    'minCpuFrequency', default_min_freq)
+                game_gpu_mode = tdp_profile.get('gpuMode', default_gpu_mode)
 
-            epp, _ = get_epp_status()
-            if epp is False:
-                set_cpu_boost(cpu_boost)
-            set_smt(game_smt)
-            ryzenadj(game_tdp)
-            set_cpu_governor(game_gov)
-            set_cpu_power_preferences(game_pow_pref)
-            set_cpu_max_freq(game_max_freq)
-            set_cpu_min_freq(game_min_freq)
-        else:
-            set_smt(default_smt)
-            set_cpu_boost(default_cpu_boost)
-            ryzenadj(default_tdp)
-            set_cpu_governor(default_gov)
-            set_cpu_power_preferences(default_pow_pref)
-            set_cpu_max_freq(default_max_freq)
-            set_cpu_min_freq(default_min_freq)
+                epp, _ = get_epp_status()
+                if epp is False:
+                    set_cpu_boost(cpu_boost)
+                set_smt(game_smt)
+                ryzenadj(game_tdp)
+                set_cpu_governor(game_gov)
+                set_cpu_power_preferences(game_pow_pref)
+                set_cpu_max_freq(game_max_freq)
+                set_cpu_min_freq(game_min_freq)
+            else:
+                set_smt(default_smt)
+                set_cpu_boost(default_cpu_boost)
+                ryzenadj(default_tdp)
+                set_cpu_governor(default_gov)
+                set_cpu_power_preferences(default_pow_pref)
+                set_cpu_max_freq(default_max_freq)
+                set_cpu_min_freq(default_min_freq)
         
-        set_gpu_frequency(app)
+            set_gpu_frequency(app)
+        except Exception as e:
+            logging.error(f"error failed to set_tdp for {app} {e}")
 
         return True
 
@@ -129,7 +132,7 @@ class Plugin:
             self.app = 'default'
             loop = asyncio.get_event_loop()
             self._pool_task = loop.create_task(Plugin.poll_tdp_task(self))
-            decky_plugin.logger.info("Started loop {self._pool_task}")
+            decky_plugin.logger.info(f"Started loop {self._pool_task}")
         except Exception as e:
             decky_plugin.logger.error(e)
 

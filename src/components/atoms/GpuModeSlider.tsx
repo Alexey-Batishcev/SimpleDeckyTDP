@@ -30,7 +30,7 @@ const GpuModeSlider: FC = () => {
   return (
     <>
       <SliderField
-        label="GPU Frequency Mode"
+        label="GPU POWER"
         value={sliderValue}
         min={0}
         max={MODES.length - 1}
